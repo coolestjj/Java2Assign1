@@ -153,7 +153,7 @@ public class MovieAnalyzer {
                             Integer.parseInt(a[4].replace(" min", "")),
                             a[5],
                             Float.parseFloat(a[6]),
-                            a[7],
+                            a[7].replace("\"\"", "''").replace("\"", ""),
                             Integer.parseInt(a[8].replace("", "0")),
                             a[9],
                             a[10],
@@ -236,7 +236,7 @@ public class MovieAnalyzer {
   }
 
   public List<String> getTopMovies(int top_k, String by) {
-
+    List<String> topMovies = new ArrayList<>();
     List<Movie> movieList = streamSupplier.get().collect(Collectors.toList());
     if (by.equals("runtime")) {
       movieList =
@@ -244,16 +244,23 @@ public class MovieAnalyzer {
               .sorted(
                   Comparator.comparing(Movie::getRuntime).reversed().thenComparing(Movie::getTitle))
               .collect(Collectors.toList());
+      for (int i = 0; i < top_k; i++) {
+        topMovies.add(movieList.get(i).getTitle());
+      }
     } else if (by.equals("overview")) {
-      movieList.sort(Comparator.comparing(Movie::getTitle));
-      movieList.sort(Comparator.comparingInt(o -> -o.getOverview().length()));
-      //
-      // movieList.stream().sorted(Comparator.comparing(Movie::getOverview).reversed().thenComparing(Movie::getTitle)).collect(Collectors.toList());
-    }
-
-    List<String> topMovies = new ArrayList<>();
-    for (int i = 0; i < top_k; i++) {
-      topMovies.add(movieList.get(i).getTitle());
+      Map<String, Integer> movieOverview = new HashMap<>();
+      for (Movie movie : movieList) {
+        movieOverview.put(movie.getTitle(), movie.getOverview().length());
+      }
+      Map<String, Integer> sorted = new LinkedHashMap<>();
+      movieOverview.entrySet().stream()
+          .sorted(
+              Map.Entry.<String, Integer>comparingByValue()
+                  .reversed()
+                  .thenComparing(Map.Entry.comparingByKey()))
+          .forEachOrdered(e -> sorted.put(e.getKey(), e.getValue()));
+      topMovies.addAll(sorted.keySet());
+      topMovies = topMovies.subList(0, top_k);
     }
     return topMovies;
   }
@@ -371,6 +378,6 @@ public class MovieAnalyzer {
 
   public static void main(String[] args) throws IOException {
     MovieAnalyzer m = new MovieAnalyzer("resources/imdb_top_500.csv");
-    System.out.println(m.getTopStars(15, "gross"));
+    System.out.println(m.getTopMovies(20, "overview"));
   }
 }
