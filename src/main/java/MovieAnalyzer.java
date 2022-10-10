@@ -129,7 +129,7 @@ public class MovieAnalyzer {
     }
   }
 
-  public MovieAnalyzer(String data_set) throws IOException {
+  public MovieAnalyzer(String data_set) {
 
     streamSupplier =
         () -> {
@@ -169,7 +169,6 @@ public class MovieAnalyzer {
         };
   }
 
-  // Number of movies per year
   public Map<Integer, Integer> getMovieCountByYear() {
     Map<Integer, Long> moviePerYear =
         streamSupplier
@@ -302,36 +301,35 @@ public class MovieAnalyzer {
       topStars.addAll(sorted.keySet());
       topStars = topStars.subList(0, top_k);
     } else if (by.equals("gross")) {
-      Map<String, int[]> starInfo = new LinkedHashMap<>();
+      Map<String, long[]> starInfo = new LinkedHashMap<>();
       for (Movie movie : movieList) {
         String[] stars =
             new String[] {movie.getStar1(), movie.getStar2(), movie.getStar3(), movie.getStar4()};
         for (String star : stars) {
-          int[] info;
+          long[] info;
           if (starInfo.containsKey(star)) {
             info = starInfo.get(star);
           } else {
-            info = new int[3];
+            info = new long[3];
           }
           if (movie.getGross() != 0) {
             info[0] += movie.getGross();
             info[1] += 1;
             info[2] = info[0] / info[1];
           }
-
           starInfo.put(star, info);
         }
       }
-      Map<String, Integer> grossAvg = new HashMap<>();
-      for (Map.Entry<String, int[]> entry : starInfo.entrySet()) {
+      Map<String, Long> grossAvg = new HashMap<>();
+      for (Map.Entry<String, long[]> entry : starInfo.entrySet()) {
         String star = entry.getKey();
-        int avgRating = entry.getValue()[2];
+        long avgRating = entry.getValue()[2];
         grossAvg.put(star, avgRating);
       }
-      Map<String, Integer> sorted = new LinkedHashMap<>();
+      Map<String, Long> sorted = new LinkedHashMap<>();
       grossAvg.entrySet().stream()
           .sorted(
-              Map.Entry.<String, Integer>comparingByValue()
+              Map.Entry.<String, Long>comparingByValue()
                   .reversed()
                   .thenComparing(Map.Entry.comparingByKey()))
           .forEachOrdered(e -> sorted.put(e.getKey(), e.getValue()));
@@ -376,8 +374,9 @@ public class MovieAnalyzer {
     return result;
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
+    // Testing area
     MovieAnalyzer m = new MovieAnalyzer("resources/imdb_top_500.csv");
-    System.out.println(m.getTopMovies(20, "overview"));
+    System.out.println(m.getTopStars(20, "gross"));
   }
 }
